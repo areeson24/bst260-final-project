@@ -1,0 +1,338 @@
+```{r}
+# load libraries
+library(tidyverse)
+library(patchwork)
+library(viridis)
+library(car)
+# read in data
+dat <- readRDS("../data/dat.rds")
+```
+
+```{r}
+# plot trends in cases, hospitalizations, and deaths
+nat_dat <- dat |>
+  group_by(date) |>
+  summarize(
+    case_rate = sum(cases, na.rm = TRUE) / sum(population, na.rm = TRUE) * 10^5,
+    hosp_rate = sum(hosp, na.rm = TRUE) / sum(population, na.rm = TRUE) * 10^5,
+    death_rate = sum(deaths, na.rm = TRUE) / sum(population, na.rm = TRUE) * 10^5
+  )
+p1 <- nat_dat |>
+  pivot_longer(cols = c(case_rate, hosp_rate, death_rate),
+               names_to = "type", values_to = "rate") |>
+  mutate(type = case_when(
+    type == "case_rate" ~ "Cases",
+    type == "hosp_rate" ~ "Hospitalizations",
+    type == "death_rate" ~ "Deaths"
+  )) |>
+  ggplot(aes(date, rate)) +
+  geom_line() +
+  facet_wrap(~type, nrow = 3, scales = "free_y") +
+  labs(
+    title = "National COVID-19 Pandemic Trends (2020-2024)",
+    y = "Rate per 100,000",
+    x = "Date",
+    caption = "Figure 1"
+  ) +
+  scale_x_date(date_labels = "%b %Y", breaks = "1 year") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 16, face = "bold", hjust = 0.5),
+    plot.subtitle = element_text(size = 12, hjust = 0.5),
+    plot.caption = element_text(size = 10, hjust = 1),
+    axis.title.x = element_text(size = 12),
+    axis.title.y = element_text(size = 12),
+    strip.text = element_text(size = 12, face = "bold"),
+    legend.position = "none"
+  )
+p1
+# Define wave start and end dates
+waves <- data.frame(
+  start_date = as.Date(c("2020-03-01", "2020-10-01", "2021-06-01", 
+                         "2021-12-01", "2022-04-01"))
+)
+# Add wave periods to the plot
+p2 <- p1 + geom_vline(data = waves, aes(xintercept = as.numeric(start_date)), 
+             linetype = "dashed", color = "red", size = 1)
+p2
+p2 |> saveRDS("../plots/f1-national-trends.rds")
+```
+
+```{r}
+# define new variable for wave indicator
+dat <- dat |> 
+  mutate(
+    wave = case_when(
+      date >= as.Date("2020-03-01") & date < as.Date("2020-10-01") ~ 1,
+      date >= as.Date("2020-10-01") & date < as.Date("2021-6-01") ~ 2,
+      date >= as.Date("2021-06-01") & date < as.Date("2021-12-01") ~ 3,
+      date >= as.Date("2021-12-01") & date < as.Date("2022-4-01") ~ 4,
+      date >= as.Date("2022-4-01") ~ 5,
+    )
+  ) |>
+  filter(!is.na(wave))
+nat_dat <- nat_dat |> 
+  mutate(
+    wave = case_when(
+      date >= as.Date("2020-03-01") & date < as.Date("2020-10-01") ~ 1,
+      date >= as.Date("2020-10-01") & date < as.Date("2021-6-01") ~ 2,
+      date >= as.Date("2021-06-01") & date < as.Date("2021-12-01") ~ 3,
+      date >= as.Date("2021-12-01") & date < as.Date("2022-4-01") ~ 4,
+      date >= as.Date("2022-4-01") ~ 5,
+    )
+  ) |>
+  filter(!is.na(wave))
+```
+
+```{r}
+# compute average rates for each state by wave
+dat2 <- dat |>
+  mutate(
+    death_rate = deaths / population * 10^5,
+    vax_rate = series_complete / population * 100,
+    case_rate = cases / population * 10^5,
+    hosp_rate = hosp / population * 10^5,
+  ) |>
+  group_by(wave, state) |>
+  summarize(
+    death_rate = mean(death_rate, na.rm = TRUE),
+    vax_rate = mean(vax_rate, na.rm = TRUE),
+    case_rate = mean(case_rate, na.rm = TRUE),
+    hosp_rate = mean(hosp_rate, na.rm = TRUE),
+    .groups = "drop"
+  )
+# box plot of death rate distribution by wave
+p3 <- dat2 |> 
+  ggplot(aes(factor(wave), death_rate)) +
+  geom_boxplot(fill = "lightblue", color = "black") +
+  labs(
+    title = "Distribution of State Death Rates Across Pandemic",
+    x = "Pandemic Wave",
+    y = "Death Rate per 100,000",
+    caption = "Figure 2"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 16, face = "bold", hjust = 0.5),
+    plot.subtitle = element_text(size = 12, hjust = 0.5),
+    axis.title.x = element_text(size = 12),
+    axis.title.y = element_text(size = 12),
+    strip.text = element_text(size = 12, face = "bold"),
+    legend.position = "none"
+  )
+p3
+p3 |> saveRDS("../plots/f2-rate-distributions.rds")
+```
+
+```{r}
+# scatterplot comparing death/vax relationship over time
+p4 <- ggplot(data = dat2, aes(vax_rate, death_rate, color = factor(wave))) +
+  geom_point(size = 3) +
+  labs(
+    title = "State Vaccination and Death Rates Across Pandemic",
+    subtitle = "Note: No vaccination data are available for Wave 1",
+    caption = "Figure 3",
+    x = "Vaccination Rate (%)",
+    y = "Death Rate per 100,000"
+  ) +
+  scale_color_brewer(palette = "Set1") +
+  theme_minimal() +
+  guides(color = guide_legend(title = "Wave")) +
+  theme(
+    plot.title = element_text(size = 16, face = "bold", hjust = 0.5),
+    plot.subtitle = element_text(hjust = 0.5),
+    axis.title = element_text(size = 12),
+    legend.title = element_text(size = 12),
+    legend.position = "bottom"
+  )
+p4
+p4 |> saveRDS("../plots/f3-death-vax-rates.rds")
+# list of top 5 highest average death rates for each state by wave
+regions <- dat |> select(state, region_name) |> distinct()
+dat2 |>
+  left_join(regions, by = "state") |>
+  select(wave, region_name, state, death_rate) |>
+  arrange(wave, -death_rate) |>
+  group_by(wave) |>
+  slice_max(order_by = death_rate, n = 5) |>
+  mutate(death_rate = round(death_rate, 2)) |>
+  rename(Wave = wave, `Region Name` = region_name,
+         State = state, `Death Rate` = death_rate) |>
+  kable(caption = "Supplementary Table 1: Top 5 States with Highest Death Rates by Pandemic Wave") |>
+  saveRDS("../plots/supp-t1-state-high-rates.rds")
+dat2 |>
+  left_join(regions, by = "state") |>
+  select(wave, region_name, state, death_rate) |>
+  arrange(wave, death_rate) |>
+  group_by(wave) |>
+  slice_min(order_by = death_rate, n = 5) |>
+  mutate(death_rate = round(death_rate, 2)) |>
+  rename(Wave = wave, `Region Name` = region_name,
+         State = state, `Death Rate` = death_rate) |>
+  kable(caption = "Supplementary Table 2: Top 5 States with Lowest Death Rates by Pandemic Wave") |>
+  saveRDS("../plots/supp-t2-state-low-rates.rds")
+```
+
+```{r}
+# histogram of outcome
+p5 <- dat2 |> 
+  ggplot(aes(death_rate)) +
+  geom_histogram(fill = "lightblue", color = "black") +
+  labs(
+    title = "Death Rate Histogram",
+    caption = "Supplementary Figure 1",
+    x = "State COVID-19 Death Rates during Pandemic",
+    y = "Frequency"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 16, face = "bold", hjust = 0.5),
+    plot.subtitle = element_text(size = 12, hjust = 0.5),
+    axis.title.x = element_text(size = 12),
+    axis.title.y = element_text(size = 12),
+    strip.text = element_text(size = 12, face = "bold"),
+    legend.position = "none"
+  )
+p5
+p5 |> saveRDS("../plots/supp-f1-outcome-hist.rds")
+p6 <- dat2 |> 
+  ggplot(aes(log(death_rate+1))) +
+  geom_histogram(fill = "lightblue", color = "black") +
+  labs(
+    title = "Death Rate Histogram (Log Scale)",
+    caption = "Supplementary Figure 2",
+    x = "State COVID-19 log(Death Rates + 1) during Pandemic",
+    y = "Frequency"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 16, face = "bold", hjust = 0.5),
+    plot.subtitle = element_text(size = 12, hjust = 0.5),
+    axis.title.x = element_text(size = 12),
+    axis.title.y = element_text(size = 12),
+    strip.text = element_text(size = 12, face = "bold"),
+    legend.position = "none"
+  )
+p6
+p6 |> saveRDS("../plots/supp-f2-log-outcome-hist.rds")
+# fit linear model with death rate as outcome
+# start with only wave as predictor
+mod1 <- lm(death_rate ~ factor(wave), data = dat2)
+summary(mod1)
+plot(mod1)
+# apply log transformation
+mod2 <- lm(log(death_rate+1) ~ factor(wave), data = dat2)
+summary(mod2)
+plot(mod2)
+# adjust for vaccination, case, and hosp rates
+mod3 <- lm(log(death_rate+1) ~ factor(wave) + vax_rate + case_rate + hosp_rate,
+           data = dat2)
+summary(mod3)
+# diagnostics
+plot(mod3, 1:2)
+vif(mod3)
+# fit without log transformation to show heteroscedasticity
+mod4 <- lm(death_rate ~ factor(wave) + vax_rate + case_rate + hosp_rate,
+           data = dat2)
+summary(mod4)
+# diagnostics
+plot(mod4, 1:2)
+p7 <- data.frame(res = resid(mod4), y_hat = fitted(mod4)) |>
+  ggplot(aes(y_hat, res)) +
+  geom_point() +
+  geom_hline(yintercept = 0, lty = 2, color = "red") +
+  labs(
+    title = "Residual Plot for Model 2 with Non-Transformed Outcome",
+    caption = "Supplementary Figure 3",
+    x = "Fitted Values",
+    y = "Residuals"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 16, face = "bold", hjust = 0.5),
+    plot.subtitle = element_text(size = 12, hjust = 0.5),
+    axis.title.x = element_text(size = 12),
+    axis.title.y = element_text(size = 12),
+    strip.text = element_text(size = 12, face = "bold"),
+    legend.position = "none"
+  )
+p7
+p7 |> saveRDS("../plots/supp-f3-res-plot-nolog.rds")
+p8 <- data.frame(res = resid(mod3), y_hat = fitted(mod3)) |>
+  ggplot(aes(y_hat, res)) +
+  geom_point() +
+  geom_hline(yintercept = 0, lty = 2, color = "red") +
+  labs(
+    title = "Residual Plot for Model 2 with Log-Transformed Outcome",
+    caption = "Supplementary Figure 4",
+    x = "Fitted Values",
+    y = "Residuals"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 16, face = "bold", hjust = 0.5),
+    plot.subtitle = element_text(size = 12, hjust = 0.5),
+    axis.title.x = element_text(size = 12),
+    axis.title.y = element_text(size = 12),
+    strip.text = element_text(size = 12, face = "bold"),
+    legend.position = "none"
+  )
+p8
+p8 |> saveRDS("../plots/supp-f4-res-plot-log.rds")
+```
+
+```{r}
+# results
+unadjusted_r2 <- summary(mod2)$adj.r.squared
+adjusted_r2 <- summary(mod3)$adj.r.squared
+cbind(unadjusted_r2, adjusted_r2)
+unadjusted_betas <- coef(mod2)
+unadjusted_betas_og <- exp(coef(mod2))-1
+rbind(unadjusted_betas, unadjusted_betas_og)
+adjusted_betas <- coef(mod3)
+adjusted_betas_og <- exp(coef(mod3))-1
+rbind(adjusted_betas, adjusted_betas_og)
+unadjusted_coefs <- summary(mod2)$coef
+unadjusted_cis <- confint(mod2)
+unadjusted_pvals <- unadjusted_coefs[,4]
+unadjusted_coefs_og <- exp(unadjusted_coefs[, 1]) - 1
+unadjusted_cis_og <- exp(unadjusted_cis) - 1
+model1_table <- data.frame(
+  Coefficient = unadjusted_coefs_og,
+  `Lower.CI` = unadjusted_cis_og[, 1],
+  `Upper.CI` = unadjusted_cis_og[, 2]
+)
+model1_table <- model1_table |> round(3)
+model1_table <- cbind(Variable = c("Intercept", "Wave 2", "Wave 3", "Wave 4", "Wave 5"),
+      model1_table)
+model1_table$`P-value` <- if_else(unadjusted_pvals < 0.001, "< 0.001", 
+              as.character(unadjusted_pvals))
+rownames(model1_table) <- NULL
+adjusted_coefs <- summary(mod3)$coef
+adjusted_cis <- confint(mod3)
+adjusted_pvals <- adjusted_coefs[,4]
+adjusted_coefs_og <- exp(adjusted_coefs[, 1]) - 1
+adjusted_cis_og <- exp(adjusted_cis) - 1
+model2_table <- data.frame(
+  Coefficient = adjusted_coefs_og,
+  `Lower.CI` = adjusted_cis_og[,1],
+  `Upper.CI` = adjusted_cis_og[,2]
+)
+model2_table <- model2_table |> round(3)
+model2_table$`P-value` <- if_else(adjusted_pvals < 0.001, "< 0.001", 
+              as.character(round(adjusted_pvals, 3)))
+model2_table <- cbind(Variable = c("Intercept", "Wave 3", "Wave 4", "Wave 5",
+                            "Vaccination Rate", "Case Rate", 
+                            "Hospitalization Rate"), model2_table)
+rownames(model2_table) <- NULL
+model1_table
+model2_table
+# save
+model1_table |>
+  kable(caption = paste("Table 1: Model 1 Results ( Adj. R^2 =",
+                        round(unadjusted_r2, 2), ")")) |> 
+          saveRDS("../plots/t1-mod1-res.rds")
+model2_table |> 
+  kable(caption = paste("Table 2: Model 2 Results ( Adj. R^2 =",
+                        round(adjusted_r2, 2), ")")) |> saveRDS("../plots/t2-mod2-res.rds")
+```

@@ -1,0 +1,22 @@
+---
+format: html
+echo: false
+---
+
+```{r, message=FALSE, warning=FALSE}
+# figure 1
+readRDS("../plots/supp-f1-outcome-hist.rds")
+# figure 2
+readRDS("../plots/supp-f2-log-outcome-hist.rds")
+# figure 3
+readRDS("../plots/supp-f3-res-plot-nolog.rds")
+# figure 4
+readRDS("../plots/supp-f4-res-plot-log.rds")
+```
+
+```{r}
+# table 1
+readRDS("../plots/supp-t1-state-high-rates.rds")
+# table 2
+readRDS("../plots/supp-t2-state-low-rates.rds")
+```

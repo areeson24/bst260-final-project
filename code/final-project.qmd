@@ -1,0 +1,164 @@
+---
+title: "State-Level Disparities and the Role of Vaccination in Mitigating COVID-19 Mortality Across Five Pandemic Waves in the United States (2020-2024)"
+author: "Adam Reeson"
+date: "12-19-2024"
+format: html
+echo: false
+---
+
+## Abstract
+
+This study examines the progression of COVID-19 cases, hospitalizations, deaths, and vaccination coverage across the United States from January 2020 to December 2024. Using five distinct pandemic waves identified through visual analysis of case, hospitalization, and death peaks, the study employs data visualizations such as line charts to depict temporal trends, boxplots to highlight death rate distributions across waves, and scatterplots to explore links between vaccination rates and mortality. Regression analyses show that states with greater vaccination coverage tend to have significantly lower death rates, even after adjusting for case and hospitalization rates. Over time, death rate variability diminished, coinciding with widespread vaccination and enhanced public health measures. These findings emphasize the critical role of vaccination in reducing COVID-19 severity while exposing state-level disparities in outcomes. The insights gained here have implications for improving pandemic preparedness and response strategies.
+
+## Introduction
+
+The COVID-19 pandemic, driven by the SARS-CoV-2 virus, has left a lasting impact on public health, the global economy, and daily life around the world. Since its discovery in late 2019, the virus has tested the resilience of healthcare systems and the effectiveness of public health interventions. In the United States, the pandemic unfolded in waves, each marked by shifting patterns in cases, hospitalizations, and deaths. These waves were shaped by factors like the emergence of new variants, the implementation of public health measures, and the gradual rollout of vaccines. Gaining a clearer understanding of these trends and the factors influencing them is essential for crafting effective responses to future pandemics.
+
+From early in the pandemic, disparities in outcomes were evident across states. Some regions faced significantly higher mortality rates, while others managed to contain the virus more effectively. This variation underscores the importance of exploring state-level differences to identify strategies that worked well and lessons that can inform future efforts. By examining these disparities across distinct pandemic waves, this study aims to shed light on the public health measures and vaccination efforts that made the biggest difference.
+
+Vaccination has been one of the most significant tools in the fight against COVID-19, helping to reduce the severity of illness, hospitalizations, and deaths. By late 2021, vaccines were widely available in the U.S., ushering in a new phase of the pandemic. However, vaccine uptake was uneven across states, creating disparities in outcomes and raising questions about the relationship between vaccination rates and death rates. This study investigates how vaccination coverage influenced mortality over time and whether its impact varied across different phases of the pandemic.
+
+Another critical question this study addresses is whether the virulence of COVID-19 changed during the pandemic. Factors such as viral mutations, improved treatment protocols, and the growing prevalence of immunity—through infection or vaccination—may have altered the virus's severity. By analyzing death rates over successive waves, this research explores whether COVID-19 became more or less lethal as the pandemic progressed.
+
+This analysis uses a combination of data visualization and regression modeling to address three main questions:
+
+1.  How did trends in COVID-19 cases, hospitalizations, and deaths change over the course of the pandemic?
+
+2.  Which states performed better or worse in terms of mortality during each pandemic wave?
+
+3.  What role did vaccination play in mitigating death rates, and how did this relationship evolve over time?
+
+The findings of this study offer a comprehensive overview of how the pandemic unfolded in the U.S., emphasizing the importance of vaccination and highlighting key differences in state-level outcomes. By understanding these trends, this research provides actionable insights to improve preparedness for future public health crises.
+
+## Methods
+
+### Data Source
+
+This study relies on publicly available COVID-19 data for the United States, covering the period from January 2020 through December 2024. The primary data source for COVID-19 cases, hospitalizations, deaths, and vaccination coverage is the Centers for Disease Control and Prevention (CDC). The dataset includes weekly state-level records for each of these variables, with corresponding entries representing the reported number of cases, hospitalizations, deaths, and vaccinations for a specific week.
+
+Population estimates for each state were sourced from the U.S. Census Bureau for the years 2020 through 2023. For 2024, population estimates were derived using the national population projections for that year. Specifically, the 2024 population of each state was estimated by multiplying the national population projection by each state's proportion of the total U.S. population from the 2023 census data.
+
+### Wave Definition
+
+To segment the pandemic into meaningful periods, we identified five distinct waves using sustained peaks in nationally aggregated case, hospitalization, and death rates. Wave boundaries were defined by significant changes in these metrics, confirmed through visual inspection of temporal trends. The resulting wave periods were as follows (note that January-February 2020 are not included in any wave due to unavailable data):
+
+-   **Wave 1:** March 2020 to September 2020
+
+-   **Wave 2:** October 2020 to May 2021
+
+-   **Wave 3:** June 2021 to November 2021
+
+-   **Wave 4**: December 2021 to March 2022
+
+-   **Wave 5:** April 2022 onward
+
+### Data Processing and Variable Definitions
+
+National rates were used to identify waves and were computed by averaging key variables–including death rates, case rates, and hospitalization rates–over all states for each week. Vaccination rates were defined as the proportion of the total population that has received a complete initial vaccine series, expressed as a percent. Death, case, and hospitalization rates were defined as new events during that period, per 100,000 people.
+
+Mean rates for these same four variables were calculated for all 50 states, in addition to Washington D.C. and Puerto Rico, for each wave. State rates were simply averaged over over for all weeks in a given wave.
+
+### Statistical Analysis
+
+To examine the relationship between COVID-19 vaccination rates and death rates, two regression models were employed. These models aimed to understand the respective influence of pandemic waves and other factors on mortality, which is a proxy measure for virulence.
+
+1.  **Model 1:** To evaluate the impact of pandemic waves on death rates, a linear regression model was first fitted using death rate as the outcome variable with wave as a categorical predictor, representing five levels. The log-transformation was applied to the death rate outcome to address heteroscedasticity and skewness in the distribution (see Figures 1-4 in the Supplementary Materials for justification):
+
+    $$
+    \log (\text{Death Rate}_i+1) = \beta_0 + \beta_1 \cdot \text{Wave}_i 
+    + \varepsilon_i
+    $$
+
+    for $i = 1, \dots , 260.$
+
+2.  **Model 2:** To control for additional factors, a second model was developed. State death rates were modeled again using the categorical wave predictor, but this time adjusting for vaccination, hospitalization, and case rates:
+
+$$
+    \log(\text{Death Rate}_i+1) = \beta_0 + \beta_1 \cdot \text{Wave}_i +
+    \beta_2 \cdot \text{Vax Rate}_i
+    $$ $$
+    \newline
+     + \beta_3 \cdot \text{Hosp Rate}_i
+    + \beta_4 \cdot \text{Case Rate}_i + \varepsilon_i
+    $$
+
+for $i = 1, \dots, 208.$ Note that model 2 is not fitted using data from wave 1 since vaccine data were not collected at this time.
+
+Diagnostic checks were conducted to evaluate the validity of linear model assumptions. These checks included the examination of residual plots for homoscedasticity, normality of residuals, and potential outliers. Additionally, Variance Inflation Factor (VIF) scores were calculated to assess multicollinearity among the predictors. A VIF greater than 5 indicated potential multicollinearity issues that could undermine the stability of coefficient estimates.
+
+Statistical significance of model coefficients was determined using p-values with threshold $\alpha = 0.05.$ Adjusted $R^2$ was used to evaluate model fit.
+
+## Results
+
+### COVID-19 Trends Across Waves
+
+The first step in our analysis was to examine the trends in COVID-19 cases, hospitalizations, and deaths across the U.S. from January 2020 to December 2024. Figure 1 displays line plots for each of these three indices, with trends separated by pandemic waves (with red dashed lines denoting the start of each wave). Rates of cases, hospitalizations, and deaths are per 100,000 people.
+
+```{r}
+readRDS("../plots/f1-national-trends.rds")
+```
+
+The data clearly illustrate the synchronized fluctuations in these rates across the five identified waves of the pandemic. Global peaks in cases, hospitalizations, and deaths occurred at different times, reflecting the spread of new variants and the evolving public health response. Notably, the death to case ratio became smaller over time.
+
+### Distribution of Death Rates Across Pandemic Waves
+
+Figure 2 presents boxplots of average state death rates per 100,000 people across the five pandemic waves. These plots provide insights into the variability of death rates and highlight how state-level disparities evolved over time.
+
+```{r}
+readRDS("../plots/f2-rate-distributions.rds")
+```
+
+The first and second waves contain certain states with much higher mortality. In contrast, the third and fourth waves exhibit a somewhat narrower distribution, suggesting that, as the pandemic progressed, overall death rates decreased and the impact became more consistent across states, into wave five with states uniformly experiencing low death rates.
+
+Please see Supplementary Tables 1 and 2, which contain the highest and lowest state averages for each pandemic period. From these tables, we can see that northeastern states/regions were impacted more harshly in the first and last waves, while central and mountain states suffered most during the middle of the pandemic, on average.
+
+### Relationship Between Vaccination and Death Rates
+
+Figure 3 explores the relationship between state-level vaccination rates and death rates, stratified by wave. Each point represents the average death rate and vaccination rate for a specific state during a given wave.
+
+```{r, warning=FALSE}
+readRDS("../plots/f3-death-vax-rates.rds")
+```
+
+The plot shows a clear negative correlation: states with higher vaccination rates tended to report lower death rates. This pattern is consistent across most waves, with the exception of wave 2, where limited vaccine coverage resulted in higher death rates across many states, and wave 5 where widespread vaccinations resulted in the initial series having less of an effect against variants.
+
+### Regression Models
+
+To examine factors associated with COVID-19 death rates across pandemic waves, two regression models were fitted. The unadjusted model (Model 1) included only wave indicators as predictors. The adjusted model (Model 2) included three additional covariates: vaccination rates, case rates, and hospitalization rates. Tables 1 and 2 provide a summary of the key results, including adjusted $R^2$ values and coefficients with 95% CIs for both models (on the original scale).
+
+```{r}
+readRDS("../plots/t1-mod1-res.rds")
+readRDS("../plots/t2-mod2-res.rds")
+```
+
+In Model 1, each wave showed a significant difference in average death rate compared to wave 1, with waves 2-4 exhibiting positive associations and wave 5 showing a negative association with average death rate. This model explained a moderate proportion of the variability in COVID-19 death rates, with an adjusted adjusted $R^2$ of 0.61.
+
+In Model 2, the inclusion of vaccination rates, case rates, and hospitalization rates substantially improved the model's explanatory power, increasing the adjusted $R^2$ to 0.89. As expected, higher case and hospitalization rates were positively associated with mortality, while higher vaccination rates demonstrated a significant negative association with death rates. Even after adjusting for these additional covariates, significant wave effects persisted, particularly for waves 4 and 5, which had significantly lower death rates when compared to wave 2, holding other covariates fixed. Notably, wave 1 was excluded from this model due to the unavailability of vaccination data during that period.
+
+Examination of residual and QQ-plots validated the linear model assumptions, and VIFs showed no strong evidence of multicollinearity for Model 2.
+
+## Discussion
+
+This study sought to understand the progression of COVID-19 mortality rates across five pandemic waves in the U.S., emphasizing the role of vaccination and other factors. The findings highlight the evolving nature of the pandemic, the significant impact of vaccination, and persistent state-level disparities that warrant attention for future public health planning.
+
+### Interpretation of Key Findings
+
+The analysis revealed distinct patterns in COVID-19 mortality across the five waves. Initially, death rates were high and variable across states, reflecting differences in public health preparedness, healthcare capacity, and policy responses. Over time, the variability in mortality diminished, coinciding with the rollout of vaccines and improved public health measures. The decreasing death-to-case ratio observed in later waves underscores the combined effects of widespread immunity, improved clinical management, and public health interventions.
+
+Model 1 highlighted the significant wave effects, suggesting that shifts in mortality were not solely attributable to changes in case or hospitalization rates but also to broader contextual factors, such as viral variants and the availability of vaccines. Model 2 provided deeper insights by incorporating vaccination, case, and hospitalization rates. The substantial increase in adjusted adjusted $R^2$ from 0.61 in Model 1 to 0.89 in Model 2 underscores the importance of these covariates in explaining mortality variability. Vaccination, in particular, emerged as a critical factor, with higher rates consistently associated with lower death rates. This finding aligns with global evidence on the protective effects of COVID-19 vaccines.
+
+### State-Level Disparities
+
+Despite the overall reduction in mortality, state-level disparities persisted throughout the pandemic. States with higher vaccination rates consistently fared better, while those with limited vaccine uptake experienced disproportionately higher mortality. This disparity highlights the influence of socioeconomic, political, and cultural factors on public health outcomes. For example, vaccine hesitancy driven by misinformation and political polarization likely contributed to uneven vaccine uptake, exacerbating existing inequities in healthcare access and outcomes.
+
+The findings also suggest that states in different regions faced varying challenges during each wave. Northeastern states were more severely affected early in the pandemic, likely due to higher population density and earlier exposure to the virus. In contrast, central and mountain states experienced greater mortality in later waves, potentially reflecting delays in implementing public health measures and slower vaccine rollouts.
+
+### Limitations and Strengths
+
+While this study provides valuable insights, several limitations should be acknowledged. First, the analysis relied on aggregate state-level data, which may obscure within-state disparities. Future research could explore more granular data, such as county-level outcomes, to identify localized trends. Second, the models excluded potential confounders, such as socioeconomic status and comorbidities, which could influence mortality rates. Finally, wave definitions were based on visual analysis, which, while practical, introduces subjectivity.
+
+Despite these limitations, the study has notable strengths. By incorporating data spanning nearly five years, it captures the long-term progression of the pandemic, offering a comprehensive view of mortality trends. The use of regression modeling to adjust for key covariates enhances the robustness of the findings, and the focus on state-level disparities provides actionable insights for policymakers.
+
+### Conclusion
+
+This study demonstrates the evolving nature of COVID-19 mortality across pandemic waves, highlighting the importance of vaccination in reducing death rates. While mortality variability diminished over time, state-level disparities persisted, reflecting broader systemic inequities. These findings emphasize the need for equitable public health policies and robust preparedness plans to mitigate the impact of future pandemics.
